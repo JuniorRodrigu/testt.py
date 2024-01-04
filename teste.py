@@ -7,8 +7,8 @@ import pygame
 # Initialize Pygame
 pygame.init()
 
-# Load the sound you want to play (the file is in the same directory as your script)
-som_colisao = pygame.mixer.Sound('tok.mp3')
+# Load the piano sound for collision (replace 'piano_E_note.mp3' with your actual file)
+piano_sound = pygame.mixer.Sound('tok.mp3')
 
 # Define initial parameters
 raio_externo = 5
@@ -31,8 +31,8 @@ ax.set_aspect('equal', 'box')
 ax.set_xlim(-raio_externo, raio_externo)
 ax.set_ylim(-raio_externo, raio_externo)
 
-# Draw the larger circular area
-circulo_area = plt.Circle((0, 0), raio_externo, color='blue', fill=False)
+# Draw the larger circular area with a white background
+circulo_area = plt.Circle((0, 0), raio_externo, color='white', fill=True)
 ax.add_patch(circulo_area)
 
 # Draw the ball
@@ -42,9 +42,10 @@ ax.add_patch(bolinha)
 # Initialize the ball's trail
 trail = np.empty((0, 2), float)
 
-# Create the LineCollection
-lines = LineCollection([], cmap=plt.cm.viridis, linestyles='solid')
+# Create the LineCollection with black color and line width equal to the diameter of the ball
+lines = LineCollection([], colors='black', linestyles='solid', linewidths=2 * raio_bolinha)
 ax.add_collection(lines)
+
 
 # Function to check collision with the border of the circular area and play the sound
 def verificar_colisao(x, y):
@@ -54,8 +55,8 @@ def verificar_colisao(x, y):
         # Increase the collision count
         contagem_colisoes += 1
 
-        # Play the sound for 1 second
-        som_colisao.play(maxtime=int(tempo_de_som * 1000))
+        # Play the piano sound for 1 second
+        piano_sound.play(maxtime=int(tempo_de_som * 1000))
 
         # Reflect the velocity and add a spin
         vetor_normal = np.array([x, y]) / np.linalg.norm([x, y])
@@ -88,7 +89,7 @@ def update(frame):
     return verificar_colisao(x, y)
 
 # Create the animation
-ani = animation.FuncAnimation(fig, update, frames=200, interval=50, blit=False)
+ani = animation.FuncAnimation(fig, update, frames=1440, interval=0, blit=False)
 
 # Show the animation
 plt.show()
