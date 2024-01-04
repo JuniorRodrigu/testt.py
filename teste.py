@@ -4,11 +4,9 @@ import matplotlib.animation as animation
 from matplotlib.collections import LineCollection
 import pygame
 
-# Initialize Pygame
+# Initialize Pygame and set up the mixer
 pygame.init()
-
-# Load the piano sound for collision (replace 'piano_E_note.mp3' with your actual file)
-piano_sound = pygame.mixer.Sound('tok.mp3')
+pygame.mixer.init(frequency=44100, size=-16, channels=2)  # Initialize mixer for stereo sound
 
 # Define initial parameters
 raio_externo = 5
@@ -20,8 +18,19 @@ fator_aumento = 0.1
 max_trail_length = 1000  # Maximum length of the trail
 contagem_colisoes = 0  # Collision counter
 
-# Variable to control the sound playback
-tempo_de_som = 1.0  # Duration of 1 second for sound playback
+# Sound parameters
+frequencia_E4 = 329.63  # Frequency of E4 note
+duracao_som = 1.0  # Duration in seconds
+sample_rate = 44100  # Sample rate in Hz
+t = np.linspace(0, duracao_som, int(sample_rate * duracao_som), False)  # Time axis
+nota_mi = np.sin(frequencia_E4 * 2 * np.pi * t)  # Generate E4 tone
+
+# Convert to 16-bit signed integer and create a stereo sound array
+som_array = (32767 * nota_mi).astype(np.int16)
+som_stereo = np.column_stack((som_array, som_array))  # Duplicate for stereo
+
+# Create the sound object
+som = pygame.sndarray.make_sound(som_stereo)
 
 # Create the figure and axis
 fig, ax = plt.subplots()
@@ -42,36 +51,31 @@ ax.add_patch(bolinha)
 # Initialize the ball's trail
 trail = np.empty((0, 2), float)
 
-# Create the LineCollection with black color and line width equal to the diameter of the ball
+# Create the LineCollection
 lines = LineCollection([], colors='black', linestyles='solid', linewidths=2 * raio_bolinha)
 ax.add_collection(lines)
 
-
-# Function to check collision with the border of the circular area and play the sound
+# Function to check collision
 def verificar_colisao(x, y):
     global raio_bolinha, velocidade_inicial, trail, contagem_colisoes
     distancia_centro = np.sqrt(x**2 + y**2)
     if distancia_centro >= raio_externo - raio_bolinha:
-        # Increase the collision count
         contagem_colisoes += 1
-
-        # Play the piano sound for 1 second
-        piano_sound.play(maxtime=int(tempo_de_som * 1000))
-
-        # Reflect the velocity and add a spin
+        som.play()
         vetor_normal = np.array([x, y]) / np.linalg.norm([x, y])
         velocidade_inicial -= 2 * np.dot(velocidade_inicial, vetor_normal) * vetor_normal
         velocidade_inicial += 0.05 * np.array([-vetor_normal[1], vetor_normal[0]])
         x, y = (raio_externo - raio_bolinha - 0.1) * vetor_normal
         raio_bolinha += fator_aumento
-        bolinha.set_radius(raio_bolinha)
 
-    # Add the current position to the trail
+        # Update the ball's radius and the line's width
+        bolinha.set_radius(raio_bolinha)
+        lines.set_linewidths(2 * raio_bolinha)
+
     trail = np.append(trail, [[x, y]], axis=0)
     if trail.shape[0] > max_trail_length:
-        trail = trail[-max_trail_length:]  # Keep only the last points
+        trail = trail[-max_trail_length:]
 
-    # Update the LineCollection with the new trail
     lines.set_segments([trail])
     lines.set_array(np.linspace(0, 1, trail.shape[0]))
 
